@@ -1,148 +1,80 @@
 FORMAT: 1A
-HOST: http://dev-01.spinoco.com/
+HOST: http://polls.apiblueprint.org/
 
-# Spinoco Authentication
+# Spinoco
 
-Spinoco authentication is based on SRP6a protocol and allows secure authentication of users to Spinoco.
-The basics of authentication are based on acquiring SRP6a authentication token, and then using that token 
-for any subsequent requests towards Spinoco. Token has limited lifetime, and when lifetime of token expires, 
-the server responds with `401 Precondition failed` response.
+Polls is a simple API allowing consumers to view polls and vote in them.
 
-There are two available methods for acquiring SRP6a code: 
- 
- - Plain text method 
- - SRP6a method
- 
-## Plain Text Authentication 
+## Questions Collection [/questions]
 
-For developers that do not have experience with SRP6a authentication or don't want to bother implementing two phase 
-authentication protocol, plain text method can be used. This plain text method runs over secured (https://) connection
-and allows by sending username and password to obtain fresh SRP6a token, that can be used later for authenticating 
-individual requests. 
+### List All Questions [GET]
 
-## SRP6a Authentication
++ Response 200 (application/json)
 
-SRP6a authentication follows specification described here: [http://srp.stanford.edu/design.html]. 
-This method is two phase mechanism, where in first step intermediate values are computed and then 
-these values are used to obtain final SRP6a authentication token. 
+        [
+            {
+                "question": "Favourite programming language?",
+                "published_at": "2015-08-05T08:40:51.620Z",
+                "choices": [
+                    {
+                        "choice": "Swift",
+                        "votes": 2048
+                    }, {
+                        "choice": "Python",
+                        "votes": 1024
+                    }, {
+                        "choice": "Objective-C",
+                        "votes": 512
+                    }, {
+                        "choice": "Ruby",
+                        "votes": 256
+                    }
+                ]
+            }
+        ]
 
-Detailed javascript implementation on how SRP6a can be used may be found with javascript 
-source code here: [https://bitbucket.org/simon_massey/thinbus-srp-js].
+### Create a New Question [POST]
 
-Spinoco uses SHA-256 Hash function and following parameteres: 
-
-```javascript
-var SRP6CryptoParams= {
-    N_base10: "448616383187165606651397957351930126088959498417676897069668099929146593133050791056986041677935700368943974214658691029107468455415273970882109774247135498147915287122728852069975864268235759217199788431041451477092639227095981654351333417492353210595652288720549813844192730489571439345577216025985178039675579730305754734022526822185859548503530557959207512412633499051392938758716075863712443209048239916212231617118226047298314209402496598826021084630927234351872299676843649774085599799977855576878895229392716612630885512894472432885027870635373635240671589195395903474869071154351550631506416922905672517",
-    g_base10: "2",
-    k_base16: "bd3aecf291f7b79355111ef96b385fb4ecdfb82f8e5eb44a3257c6e4bed67d79"
-}
-
-```
-
-## Using SRP6a token 
-
-SRP6a token is passed with Each HTTP Request in `Authorization` Header like in following example: 
-
-```
-Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
-
-```
-
-If client cannot supply Authorization header to request, then it may supply token as parameter to request. 
-This is used for example for websocket communitation. Example of such technique is here: 
-
-```
-GET /user/wss?a=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
-```
-
-
-## Impersonation 
-
-Certain API calls allows one account to impersonate for the other. These are calls that require 
-special privilegies to be assigned to user that is willing to perfrom requests on behalf of other users. Such requests are 
-required to contain further parameter in authentication to indicate user on which behalf API user 
-is making the request. 
-
-For requests authenticated by `Authorize` header, user is passed as authentication property like in this example: 
-
-
-```
-Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c,user=marry.doe@domain.com
-
-```
-
-Similarly for authentication passed as query paramater user is passed as user parameter: 
-
-```
-GET /user/wss?a=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c&u=marry.doe@domain.com
-```
-
- 
-
-## Plain Text Authentication [/auth]
-### Acquire SRP6a authentication token [POST]
+You may create your own question using this action. It takes a JSON
+object containing a question and a collection of answers in the
+form of choices.
 
 + Request (application/json)
+
+        {
+            "question": "Favourite programming language?",
+            "choices": [
+                "Swift",
+                "Python",
+                "Objective-C",
+                "Ruby"
+            ]
+        }
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Location: /questions/2
 
     + Body
-    
+
             {
-                "username" : "john.doe@domain.com",
-                "password" : "secretPassword"
-            }
-    
-
-
-+ Response 200 (application/json)
-
-    + Body
-    
-            {
-                "token" : "5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c"
-            }
-    
-
-## SRP6a Authentication Step1 [/auth/1]    
-### Acquire Salt and 'B' value [GET]
-
-+ Request (application/json)
-
-    + Body 
-    
-            {
-                "userName" : "john.doe@domain.com", 
-                "A" : "69a92c2ea29d48e0945d9bf73337788f74ef158394b4bf93cfd993936dc2e290f34a0bacd0c0aa55abe30f03bdea0c4e9f908bd38a3f3dc62b153eec1ff077a13da8967cb56baa34e11a03e2dd292048b66b773ee944377a7c6c15d4e698851770862f3f2f9152f9dde1850e353f113930a331bf5466184ed9330eb7a5c99ca5396d48a3f6ac84a91c992ccf9cfa4c1826d95b0163dd9cf5038adffae0ec5ed0fa5f8a0da91ba3b7482720c722a55f0513c62de3c8ccf59a78f2cc9ef22cc7c19e955e726c32de9425f5d42c6a1b46013e57b117c577bffc121a7a59ab93d14386b68a9102d0402d4aadae103651e65c161c58995db80197351a31233a8a"
-            }
-
-+ Response 200 (application/json)
-
-    + Body 
-    
-            {
-                "s" : "8c18cbc8af45bcb27c260defaaa65e21001923e054ce347c40d9ef7586c24163",
-                "b" : "4dca49c2a848d6234d394bcd9fa3cc06679fe677c721a879a7f54295a1a7b24bfd046eeab8543546ada3099a24be29c848f7e9aa9f3b31900924f15cd86afcabf8ed292ca7c93d78040e211ac07092a9cf07f831ad3809fd9eb0318e2d4751c599ac3ee96baec30b2aa0f56bb45278c02a6fbff6c835e6b9384775ae3b39b2141e1f26f9718de1e599f7442f2a0ba99c3833302cad1d56ae685f66593aca24758a4242bd5595ae3da097e432b623e620ccf9c0b93c2da8cd747c8c05bcd15f334bb23314c3bc7dfd5835e57dd611482a5200c51647c0354da558862140c6922b57c125b8e6428bb1a728aec1694879aa36d59fdaed81516d0c9b9d7e0021"
-            }
-
-
-## SRP6a Authentication Step2 [/auth/2]    
-### Acquire SRP6a token [GET]
-
-+ Request (application/json)
-
-    + Body 
-    
-            {
-                "M1" : "99a63dbd7a22de62db8e70588908bd5f589019d1d7f9f59a8e76d32f398f64eb", 
-                "A" : "69a92c2ea29d48e0945d9bf73337788f74ef158394b4bf93cfd993936dc2e290f34a0bacd0c0aa55abe30f03bdea0c4e9f908bd38a3f3dc62b153eec1ff077a13da8967cb56baa34e11a03e2dd292048b66b773ee944377a7c6c15d4e698851770862f3f2f9152f9dde1850e353f113930a331bf5466184ed9330eb7a5c99ca5396d48a3f6ac84a91c992ccf9cfa4c1826d95b0163dd9cf5038adffae0ec5ed0fa5f8a0da91ba3b7482720c722a55f0513c62de3c8ccf59a78f2cc9ef22cc7c19e955e726c32de9425f5d42c6a1b46013e57b117c577bffc121a7a59ab93d14386b68a9102d0402d4aadae103651e65c161c58995db80197351a31233a8a"
-            }
-
-+ Response 200 (application/json)
-
-    + Body 
-    
-            {
-                "userId" : "caffee99-fb16-11e4-88df-000000000000",
-                "ccId" : "caffee99-f18c-11e4-9a96-000000000000",
-                "token" : "5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c"
+                "question": "Favourite programming language?",
+                "published_at": "2015-08-05T08:40:51.620Z",
+                "choices": [
+                    {
+                        "choice": "Swift",
+                        "votes": 0
+                    }, {
+                        "choice": "Python",
+                        "votes": 0
+                    }, {
+                        "choice": "Objective-C",
+                        "votes": 0
+                    }, {
+                        "choice": "Ruby",
+                        "votes": 0
+                    }
+                ]
             }
