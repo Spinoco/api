@@ -106,9 +106,30 @@ Common workflow of Contact Creation is :
 1. Create Contact
 2. Send any updates to contact
 
+### Update Contact 
+
 Contact Update Api was designed to minimize chances of conflict. 
 To update contact you need to know current value of the property (i.e. address) and new value of that property. 
-See reference for further details. 
+
+Following table lists messages available to update contact and their behaviour when current or update parameter is specified: 
+
+Attribute   | Message                  | Action      | current | update 
+------------|--------------------------|-------------|--------|---------|--------
+Type        | ContactTypeUpdate        | succeeds if current value matches `current` attribute | required | required
+Phone       | ContactPhoneNumberUpdate | Adds new phone | not present | required
+Phone       | ContactPhoneNumberUpdate | Modifies current phone specified by `current` | required | required
+Phone       | ContactPhoneNumberUpdate | Removes current phone specified by `current` | required | not present
+Email       | ContactEmailUpdate       | Adds new email | not present | required
+Email       | ContactEmailUpdate       | Modifies current email specified by `current` | required | required
+Email       | ContactEmailUpdate       | Removes current email specified by `current` | required | not present
+Address     | ContactAddressUpdate     | succeeds if current value matches `current` attribute | required | required
+Parents     | ContactParentUpdate      | succeeds if current value matches `current` attribute | required | required
+Skills      | ContactSkillUpdate       | succeeds if current value matches `current` attribute | required | required
+Extermal Id | ContactExternalIdUpdate  | succeeds if current value matches `current` attribute | required | required
+Hashtag     | ContactHashTagUpdate     | Adds new hashtag | not present | required
+Hashtag     | ContactHashTagUpdate     | Removes current hashtag | required | not-present
+Hashtag     | ContactHashTagUpdate     | Modifies current hashtag | required| required
+
 
 
 # Group Authentication 
@@ -177,12 +198,15 @@ See reference for further details.
             
 # Group Address Book
 
-## Create Contact [/addressbook/create]
-### Create Contact [POST]
+## Create Contact [POST /contact] 
 
 Allows to create contact. Returns Id of the contact Created
 
 + Request (application/json)
+
+    + Headers
+    
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
 
     + Attributes 
     
@@ -209,19 +233,69 @@ Allows to create contact. Returns Id of the contact Created
                 "caffee99-f18c-11e4-9a96-000000000000"
     
 
-## Update Contact [/addressbook/update]
+## Contact Detail [/contact/{contactId}/{abId}]
+
++ Parameters
+    + contactId : `caffeeff-f18c-11e4-9a96-000000000000` (string) - Id of contact
+    + abId : `caffeeff-f18c-11e4-9a96-000000000000` (string) - Id of addressbook. Currently this must be equal to customer Id (ccId)
+    
+
+### Get Contact [GET]
+
+Gets details of single contact. Will return `404 Not Found` if contact cannot be found. 
+
++ Request 
+    
+    + Headers
+    
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+
++ Response 200 (application/json)
+    
+    + Attributes
+      + id: `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the Contact
+      + tpe (ContactType, required)
+      + externalId : `some-machine-id` (string, optional)  
+      + phoneNumbers (array, required) 
+        + ContactPhoneNumber 
+      + emails
+        + ContactEmailGet
+      + address: `Contact Address` (string, optional)  
+      + parents (array, required)
+        + `caffee99-f18c-11e4-9a96-000000000000` 
+      + skills : SK1 (array, required)
+      + hashTags (array, required)
+        + (HashTag)
+    
++ Response 404  
+
+    
+
 ### Update Contact [POST]
 
 Updates contact. Contact may be updated by several atomic updates contained with single request. 
 The reason to update only atomic fields is to minimize conflicts that may occur when multiple 
 persons are updating same contact. 
 
+If response is `409 Conflict` that indicates that current values were changed from supplied ones by update request
+
 
 
 + Request (application/json)
-    + Attributes 
+
+    + Headers
     
-+ Response 200 (application/json)    
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+
+    + Attributes 
+        + contactId : `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the Contact to update
+        + updates (array, required) - Updates to apply to contact
+            + (ContactUpdate)
+    
++ Response 204
+
++ Response 409
+  
     
 # Data Structures
 
@@ -253,6 +327,10 @@ persons are updating same contact.
 ## ContactEmail (array)
   + private (string) - Tag for the email number, e.g. work, private
   + john.doe@domain.com (string) - Email
+  
+## ContactEmailGet  
+  + label: private (string) - Tag for the email number, e.g. work, private
+  + email: john.doe@domain.com (string) - Email  
    
 ## HashTag (enum)
   + (SimpleHashTag)
@@ -278,3 +356,63 @@ persons are updating same contact.
 ## HashTagIntValue
   + __tpe : IntValue (string, fixed)
   + v : 123456 (number, required) - Value of the HashTag (numeric type)
+  
+## ClientContactUpdate (object)
+  + contactId : `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the Contact to update
+  + updates (array, required) - Updates to apply to contact
+     + (ContactUpdate)
+    
+## ContactUpdate (enum) 
+  + (ContactTypeUpdate)
+  + (ContactPhoneNumberUpdate)
+  + (ContactEmailUpdate)
+  + (ContactAddressUpdate) 
+  + (ContactParentUpdate)
+  + (ContactSkillUpdate)
+  + (ContactExternalIdUpdate)
+  + (ContactHashTagUpdate)
+  
+## ContactTypeUpdate   
+  + __tpe : ContactTypeUpdate (string, fixed)
+  + current (ContactType, required)
+  + update (ContactType, required)
+  
+## ContactPhoneNumberUpdate
+  + __tpe : ContactPhoneNumber (string, fixed)
+  + current (ContactPhoneNumber, optional)
+  + update (ContactPhoneNumber, optional)
+  
+## ContactEmailUpdate
+  + __tpe : ContactEmail (string, fixed)
+  + current (ContactEmail, optional)
+  + update (ContactEmail, optional)    
+  
+  
+## ContactAddressUpdate
+  + __tpe : ContactAddress (string, fixed)
+  + current (string, optional)
+  + update (string, optional) 
+  
+## ContactParentUpdate
+  + __tpe : ContactParent (string, fixed)
+  + current (array, required)
+    + `caffee99-f18c-11e4-9a96-000000000000`
+  + update (array, required)
+    + `caffee99-f18c-11e4-9a96-0000000000aa`
+
+## ContactSkillUpdate
+  + __tpe : ContactSkillUpdate (string, fixed)
+  + current (array, required)
+    + SK1
+  + update (array, required)
+    + SK2, SK3, SK1
+
+## ContactExternalIdUpdate  
+  + __tpe : ContactExternalIdUpdate (string, fixed)
+  + current: `some-machine-id` (string, optional) 
+  + update: `other-machine-id` (string, optional) 
+  
+## ContactHashTagUpdate
+  + __tpe : ContactHashTagUpdate (string, fixed)
+  + current (HashTag, optional)
+  + update (HashTag, optional)
