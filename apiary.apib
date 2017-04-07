@@ -131,6 +131,88 @@ Hashtag     | ContactHashTagUpdate     | Removes current hashtag | required | no
 Hashtag     | ContactHashTagUpdate     | Modifies current hashtag | required| required
 
 
+## Call Control and Monitoring
+
+Spinoco allows placing and receiveing phone calls to/from PSTN and between Spinoco Users. 
+This describes functionality that allows developer to monitor call progress for individual users and also allows 
+controlling call. 
+
+Both the call monitoring and call control allows impersonation functionality, so one account can monitor or control 
+calls on behalf of other user. 
+
+### Call Monitoring
+
+Design of the Call Monitoring and Call Control API is based on delivering snapshots of current call state rather thn sending updates. 
+This allows very simple implementation of call state within application without complex logic of call signalling. 
+As soon as any State of the call changes (dial, connection, hold, transfer, ...) call state is updated and delivered to client.
+
+Communication uses either WebSocket or SSE (Server Side Events) to deliver notifications. Events are JSON encoded
+messages. In case of WebSocket API, messages are delivered as text frames. 
+
+To monitor calls over WebSocket open Websocket against 
+
+`/api/monitor/ws?a=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c&u=john.doe@domain.com&call=monitor`
+
+To monitor calls over SSE open SSE connection against 
+
+`/api/monitor/sse?a=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c&u=john.doe@domain.com&call=monitor`
+
+In both scenarios supply following parameters: 
+
+Name | Description 
+-----|------------
+a    | Valid Authentification token
+u    | User to monitor. If not supplied will be monitoring user that owns authentication token. Note that only user with API role may impersonate other user
+call | Supplying with monitor value indicates that Spinoco shall sent events related to Call Monitoring. 
+
+Once the connection with server is establised, Spinoco will start to send state of all active calls for supplied user that take a form 
+of JSON encoded message. Following is example of such message: 
+
+``` 
+{
+ "sessionId"            : "caffeeff-f18c-11e4-9a96-000000000000", 
+ "outgoing"             : false,
+ "otherParty            : ["Jane Doe", false],
+ "otherPartyContactId"  : ["caffeeff-f18c-11e4-9a96-000000000000", "caffeeff-f18c-11e4-9a96-000000000000"],
+ "transferredTo"        : "Transferree",
+ "transferredFrom"      : "Transferror", 
+ "ringing"              : 10, 
+ "released"             : false,
+ "connected"            : 7,
+ "held"                 : 5, 
+ "skills"               : [["SK1", 1],["SK2", 2]],            
+ "hashTags"             : [["contract-id", { "__tpe" : "ValueHashTag", "id": "caffeeff-f18c-11e4-9a96-000000000000", "value" : { "__tpe" : "StringValue", "v": "ABCD-12345"} }]]
+}
+
+```
+
+Individual parameters of message have following meaning: 
+
+Name                | Required  | Type | Description 
+--------------------|-----------|------------------|-----------------------
+sessionId           | Y | String                   | Id of call session
+outgoing            | Y | Boolean                  | Indicates if user is receiveing call (false) or dialed the call (true)
+otherParty          | N | [String, Boolean]        | Indicates other (remote party) of this call. Based on `outgoing` value this is either caller or callee. If the Boolean value is true, then string contains valid E164 Number, otherwise it contains name of the contact. 
+otherPartyContactId | N | [String, String]         | If other party is contact (not a call within the group) contains id of addressBook and id of contact. 
+transferredTo       | N | String                   | Name of the party where this call is about to be transferred (transferee). 
+transferredFrom     | N | String                   | Name of the remote party from where this call is being transferred (transferor).
+ringing             | Y | Int                      | Number of seconds this call is ringing
+released            | Y | Boolean                  | If true, indicates call has been released. Also that indicates very last message of this call received. 
+connected           | N | Int                      | If present, indicates number of seconds since this call was connected.
+held                | N | Int                      | If present, indicated number of seconds since the call was held. 
+skills              | Y | [[String, Int], ...]     | Indicates skills the call has assigned. Multiple skills may be specified. The second parameter indicates skill color and shape.       
+hashTags            | Y | [[String, HashTag]       | Contains hastags assigned to call. Hastags may contain user defined attributes (i.e. contractId, customer type etc.. ) and may provide usefull information for the user. Secodn parameter is type of HashTag, first is label of HashTag.  
+
+### Call Control 
+
+Calls are controlled via submitting HTTP REST requests that require sessionId to be specified to control concrete call session.
+However when call is dialed, that requires to specify other details, such as userName, E164 formatted phone number or simillar 
+destination. When such dial attempt is registered, then as response server returns Id of such call. 
+
+
+
+
+
 
 # Group Authentication 
 
@@ -216,10 +298,8 @@ Allows to create contact. Returns Id of the contact Created
         + emails (array, required) - Contact's emails
           + (ContactEmail)
         + address: `Address Of the Contact` (string, optional)  - Optional address
-        + parents (array, required) - Parents of this contact, Supported for Person type contacts only for now, possibly empty
-            +  `caffee99-fb16-11e4-88df-000000000000`
-        + skills  (array, required) - Skills of the contact, contains ID of the skill, possibly empty
-            + VIP
+        + parents: `caffee99-fb16-11e4-88df-000000000000` (array, required) - Parents of this contact, Supported for Person type contacts only for now, possibly empty
+        + skills: VIP  (array, required) - Skills of the contact, contains ID of the skill, possibly empty 
         + externalId : `some-machine-id` (string, optional) - contains ID for machine synchronization   
         + hashtags  (array, required) - Hashtags assigned to this contact, possibly empty
           + (HashTag)
@@ -295,6 +375,142 @@ If response is `409 Conflict` that indicates that current values were changed fr
 
 + Response 409
   
+  
+# Group Call Control 
+
+## Dial new Call [POST /call/dial]
+
+Dials new call to various destination targets. Returns id of new session. 
+
++ Request (application/json) 
+
+    + Headers
+    
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+
+    + Attributes
+        + target (DialTarget, required) - Target to dial
+        + skills: SK1 (array, required) - Skills the call is marked with
+        + hashTags (array, required) - HashTags the call is marked with
+            + (HashTag)
+        
+
++ Response 200 
+
+    + Body 
+    
+            "caffee99-f18c-11e4-9a96-000000000000"
+
+## Answer Call [PUT /call/{sessionId}/answer]
+
+Answers call with specified session. User must have Spinoco application running (desktop, mobile) 
+or have available and assigned VoIP Telephone, before this is called.  
+
++ Parameters
+    + sessionId :  `caffee99-f18c-11e4-9a96-000000000000` (string) - Id of session to answer
+
++ Request 
+
+    + Headers
+    
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+
++ Response 200
+
+
+## Release Call [PUT /call/{sessionId}/release]
+
+Releases call with specified sessionId 
+
++ Parameters
+    + sessionId :  `caffee99-f18c-11e4-9a96-000000000000` (string) - Id of session to release
+
++ Request 
+
+    + Headers
+    
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+
++ Response 200
+
+## Hold Call [PUT /call/{sessionId}/hold]
+
+Holds call on specifies sessionId. If call is not yet on hold, this puts call on hold. To cancel hold with call
+that is already on hold, use Answer Call. 
+
++ Parameters
+    + sessionId :  `caffee99-f18c-11e4-9a96-000000000000` (string) - Id of session to hold
+
++ Request 
+
+    + Headers
+    
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+
++ Response 200
+
+
+## Transfer Call [/call/{sessionId}/transfer]
+
+### Transfer Call to destination [POST]
+
+Transfer call to specified destination. 
+
++ Parameters
+    + sessionId :  `caffee99-f18c-11e4-9a96-000000000000` (string) - Id of session to hold
+
++ Request  
+
+    + Headers
+    
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+            
+    + Attributes
+        + target (DialTarget, required) - Target to dial
+        + skills: SK1 (array, required) - Skills the call is marked with
+        + hashTags: (array, required) - HashTags the call is marked with
+            + (HashTag)
+
++ Response 200
+
+### Cancel transfer in progress [DELETE]
+
+If the call is currently in transfer to remote destination, but is not yet transferred (remote party did not pickup call yet)
+this allows call to be retrieved back, while cancelling the transfer. 
+
++ Parameters
+    + sessionId :  `caffee99-f18c-11e4-9a96-000000000000` (string) - Id of session to hold
+
++ Request 
+
+    + Headers
+    
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+
++ Response 200
+
+## Join Calls [PUT /call/{sessionId}/join/{otherSessionId}]
+
+Acts like transfer with consultation. Allows to bridge togehter two distinc calls, leaving current user from both calls. 
+Both calls must be established before issuing this request 
+
+If the call is currently in transfer to remote destination, but is not yet transferred (remote party did not pickup call yet)
+this allows call to be retrieved back, while cancelling the transfer. 
+
++ Parameters
+    + sessionId :  `caffee99-f18c-11e4-9a96-0000000000aa` (string) - Id of session to join
+    + otherSessionId :  `caffee99-f18c-11e4-9a96-0000000000bb` (string) - Id of other session to join
+    
++ Request 
+
+    + Headers
+    
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+
++ Response 200
+
+ 
+
     
 # Data Structures
 
@@ -415,3 +631,22 @@ If response is `409 Conflict` that indicates that current values were changed fr
   + __tpe : ContactHashTagUpdate (string, fixed)
   + current (HashTag, optional)
   + update (HashTag, optional)
+  
+## DialTarget (enum)
+  + (UserTarget)
+  + (ContactTarget)
+  + (DeviceTarget)
+
+## UserTarget 
+  + __tpe : UserTarget (string, fixed)
+  + userId : `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the user to dial, must be from the same customer
+  
+## ContactTarget
+  + __tpe : ContactTarget (string, fixed)
+  + abId  : `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the AddressBook of the Contact to dial 
+  + contactId : `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the Contact to dial  
+  + number: `+1500123456' (string, required) - E164 Formatted number  
+    
+## DeviceTarget 
+  + __tpe : DeviceTarget (string, fixed)
+  + userId : `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the device to dial, must be from the same customer
