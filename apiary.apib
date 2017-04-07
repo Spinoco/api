@@ -257,12 +257,11 @@ Gets details of single contact. Will return `404 Not Found` if contact cannot be
       + tpe (ContactType, required)
       + externalId : `some-machine-id` (string, optional)  
       + phoneNumbers (array, required) 
-        + ContactPhoneNumber 
+        + (ContactPhoneNumber) 
       + emails
-        + ContactEmailGet
+        + (ContactEmailGet)
       + address: `Contact Address` (string, optional)  
-      + parents (array, required)
-        + `caffee99-f18c-11e4-9a96-000000000000` 
+      + parents: `caffee99-f18c-11e4-9a96-000000000000`  (array, required) 
       + skills : SK1 (array, required)
       + hashTags (array, required)
         + (HashTag)
