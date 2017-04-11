@@ -156,11 +156,11 @@ messages. In case of WebSocket API, messages are delivered as text frames.
 
 To monitor calls over WebSocket open Websocket against 
 
-`/api/monitor/ws?a=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c&u=john.doe@domain.com&call=monitor`
+`/call/monitor/ws?a=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c&u=john.doe@domain.com&call=monitor`
 
 To monitor calls over SSE open SSE connection against 
 
-`/api/monitor/sse?a=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c&u=john.doe@domain.com&call=monitor`
+`/call/monitor/sse?a=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c&u=john.doe@domain.com&call=monitor`
 
 In both scenarios supply following parameters: 
 
@@ -542,9 +542,9 @@ is in middle of the call routing, then this may affect the routing and queueing 
     
             Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
 
-    + Attributes
- 
-        + (array, required) 
+    + Attributes (array, string) 
+        + SK1
+        
         
 
 + Response 200
@@ -570,9 +570,8 @@ If the call is in middle of the call routing, then this may affect the routing a
     
             Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
 
-    + Attributes
- 
-        + (array, required) 
+    + Attributes (array, fixed-type) 
+        +(HashTag)
         
 
 + Response 200
