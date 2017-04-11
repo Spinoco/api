@@ -116,6 +116,7 @@ Following table lists messages available to update contact and their behaviour w
 Attribute   | Message                  | Action      | current | update 
 ------------|--------------------------|-------------|--------|---------|--------
 Type        | ContactTypeUpdate        | succeeds if current value matches `current` attribute | required | required
+Type        | ContactTypeUpdate        | overrides content of `Type` attribute | not present | required
 Phone       | ContactPhoneNumberUpdate | Adds new phone | not present | required
 Phone       | ContactPhoneNumberUpdate | Modifies current phone specified by `current` | required | required
 Phone       | ContactPhoneNumberUpdate | Removes current phone specified by `current` | required | not present
@@ -123,9 +124,13 @@ Email       | ContactEmailUpdate       | Adds new email | not present | required
 Email       | ContactEmailUpdate       | Modifies current email specified by `current` | required | required
 Email       | ContactEmailUpdate       | Removes current email specified by `current` | required | not present
 Address     | ContactAddressUpdate     | succeeds if current value matches `current` attribute | required | required
+Address     | ContactAddressUpdate     | overrides content of `Adress` attribute | not present | required
 Parents     | ContactParentUpdate      | succeeds if current value matches `current` attribute | required | required
+Parents     | ContactParentUpdate      | overrides content of `Parents` attribute | not present | required
 Skills      | ContactSkillUpdate       | succeeds if current value matches `current` attribute | required | required
+Skills      | ContactSkillUpdate       | overrides content of `Skills` attribute | not present | required
 Extermal Id | ContactExternalIdUpdate  | succeeds if current value matches `current` attribute | required | required
+Extermal Id | ContactExternalIdUpdate  | overrides content of `ExternalId` attribute | not present | required
 Hashtag     | ContactHashTagUpdate     | Adds new hashtag | not present | required
 Hashtag     | ContactHashTagUpdate     | Removes current hashtag | required | not-present
 Hashtag     | ContactHashTagUpdate     | Modifies current hashtag | required| required
@@ -210,7 +215,14 @@ However when call is dialed, that requires to specify other details, such as use
 destination. When such dial attempt is registered, then as response server returns Id of such call. 
 
 
+### Call Property Update
 
+Api may update properties of the connected call. These properties allows to modify certain call attributes 
+that may allow application further signalling and statitcs. Currently following call attributes may be modified: 
+
+- Skills of the call 
+- HashTag(s) of the call 
+- Contact of the call 
 
 
 
@@ -489,7 +501,10 @@ this allows call to be retrieved back, while cancelling the transfer.
 
 + Response 200
 
-## Join Calls [PUT /call/{sessionId}/join/{otherSessionId}]
+
+## Join Calls [/call/{sessionId}/join/{otherSessionId}]
+
+### Join Calls [PUT]
 
 Acts like transfer with consultation. Allows to bridge togehter two distinc calls, leaving current user from both calls. 
 Both calls must be established before issuing this request 
@@ -509,7 +524,87 @@ this allows call to be retrieved back, while cancelling the transfer.
 
 + Response 200
 
+## Update Skills of Call [/call/{sessionId}/skills]
+
+### Update Skills [PUT]
+
+Allows to update Call Skills. This will replace skills of the call by ones supplied. If the call 
+is in middle of the call routing, then this may affect the routing and queueing policy.
+
++ Parameters
+    + sessionId :  `caffee99-f18c-11e4-9a96-0000000000aa` (string) - Id of session to update skills 
+
++ Request 
+
+    + Headers
+    
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+
+    + Attributes
  
+        + (array, required) 
+        
+
++ Response 200
+
++ Response 404
+
+
+## Update Hash Tags of Call [/call/{sessionId}/hashtags]
+
+### Update HashTag [PUT]
+
+Allows to update Hash Tags of the Call. This will replace any hashtags call may have associated with new ones. 
+If the call is in middle of the call routing, then this may affect the routing and queueing policy.
+
+
+
++ Parameters
+    + sessionId :  `caffee99-f18c-11e4-9a96-0000000000aa` (string) - Id of session to update hash tags  
+
++ Request 
+
+    + Headers
+    
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+
+    + Attributes
+ 
+        + (array, required) 
+        
+
++ Response 200
+
++ Response 404
+
+
+## Update Contact of Call [/call/{sessionId}/contact/{abId}/{contactId}]
+
+### Update Contact [PUT]
+
+This allows to update the contact of the call for one specified. 
+
+
+
++ Parameters
+    + sessionId :  `caffee99-f18c-11e4-9a96-0000000000aa` (string) - Id of session to update skills 
+    + abId :  `caffee99-f18c-11e4-9a96-0000000000aa` (string) - Id of new addressbook
+    + contactId :  `caffee99-f18c-11e4-9a96-0000000000aa` (string) - Id of new contact
+
++ Request 
+
+    + Headers
+    
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+
+    + Attributes
+ 
+        + (array, required) 
+        
+
++ Response 200
+
++ Response 404
 
     
 # Data Structures
