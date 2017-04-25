@@ -186,7 +186,7 @@ of JSON encoded message. Following is example of such message:
  "connected"            : 7,
  "held"                 : 5, 
  "skills"               : [["SK1", 1],["SK2", 2]],            
- "hashTags"             : [["contract-id", { "__tpe" : "ValueHashTag", "id": "caffeeff-f18c-11e4-9a96-000000000000", "value" : { "__tpe" : "StringValue", "v": "ABCD-12345"} }]]
+ "hashTags"             : [["contract-id", { "__tpe" : "ValueHashTag", "hashTagId": "caffeeff-f18c-11e4-9a96-000000000000", "value" : { "__tpe" : "StringValue", "string": "ABCD-12345"} }]]
 }
 
 ```
@@ -649,7 +649,7 @@ This allows to update the contact of the call for one specified.
 
 ## ValueHashTag
   + __tpe : ValueHashTag (string, fixed)
-  + id : `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the HashTag
+  + hashTagId : `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the HashTag
   + value (HashTagValue, required) - Value of the HashTag
   
 ## HashTagValue (enum)
@@ -658,11 +658,11 @@ This allows to update the contact of the call for one specified.
 
 ## HashTagStringValue
   + __tpe : StringValue (string, fixed)
-  + v : `some value` (string, required) - Value of the HashTag (string type)
+  + string : `some value` (string, required) - Value of the HashTag (string type)
 
 ## HashTagIntValue
   + __tpe : IntValue (string, fixed)
-  + v : 123456 (number, required) - Value of the HashTag (numeric type)
+  + int : 123456 (number, required) - Value of the HashTag (numeric type)
   
 ## ClientContactUpdate (object)
   + contactId : `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the Contact to update
