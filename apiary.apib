@@ -224,6 +224,126 @@ that may allow application further signalling and statitcs. Currently following 
 - HashTag(s) of the call 
 - Contact of the call 
 
+## Tasks
+
+### Introduction
+
+Spinoco has rich Task management system. In fact almost every activity in the system is stored as task, 
+be it call, email, missed call, appoitment or manually created task. 
+
+This api allows to create, update and query Spinoco rich Task system. 
+
+Currently supported are following task types in Spinoco : 
+
+### Type of tasks
+
+Type of Task        | Description
+--------------------|-------------------------------------------------------------------------------------
+CommonTask | Task manually created by user of Spinoco Application
+CallSessionTask | Task representing received or dialed call 
+MissedCallTask | Task created as a result of missed call from client
+EmailTask | Task representing sent or received Email 
+EventTask | Task representing event with one or many users invited in future. 
+HolidayTask | Task representing time when user in Spinoco is taking off time 
+HashTagWorkFlowTask | Task that was created by Spinoco as restult of completing other task with hashtag. 
+
+### Common attributes
+
+There are common attributes to each task that are available with each type of task. These are :
+
+Attribute | Type        | Required | Description
+----------|-------------|---|--------------------------------------
+id        | Type 1 UUID | X |UUID unique identitifaction of the task. This number is unique in Spinoco and contains timestamp when the task was created. 
+label     | String      | X |Label of the Task. String representation of the task         
+owner     | Object      | X |Owner of the task. See Owner description later. 
+assignee  | Object      | X |Assignee of the task. See Assignee description later. 
+assignableTo | Object   |   |To whom this task may be assigned. See task asignment later. 
+due       | DateTime    | X |When this task is due
+message   | Object      |   |Content of the task body (text)
+files     | Array       | X |Any attached files to this task
+result    | (Date, Object) |  |When present indicates task was completed by assignee at time completed. 
+detail    | Object      |   | Some task types may have further detailed information
+linked    | Array       |   | List of tasks, that are linked to this task
+subscribed| Array       |   | List of users subscribed to this task 
+
+
+### Task ownership 
+
+Each Task must have exactly one owner. Owner of the task is the entity, that created task, with some exceptions (read later).  
+This can be one of the following options: 
+
+Owner Type | Description
+-----------|------------------------------
+UserRequestOwner | Task was created by User in Spinoco Application
+ContactRequestOwner | Task was created by Contact in Addressbook. Typically found in call and email tasks.  
+Anonymous | Task was created by Spinoco System automatically (i.e. workflow rule)
+
+Normally, owner is user/contact that created the task. However in certain situations (i.e. dialed call) owner 
+may be also the remote party that call has to be established to. 
+
+### Task assignment
+
+Task may be assigned to one concrete user. Once task is assigned to the user, user is responsible 
+for completing the task. If the task is closed, then it is always closed by its `assignee`. 
+
+Task assignement can be in following states: 
+
+State | Description
+-----------|---------
+UnAssigned | Task is not assigned to any user
+Assigned | Task is assigned to user
+Offered | Task is assigned to user, but other users may take it and assign it to themselves. 
+
+
+Furthermore task may have set its `assignableTo` attribute. That, when set allows to specify
+who can assign that task. Specification can be one of the three possible rules, or combination of them 
+
+
+Rule | Description
+-------------|---------------
+Users  | Task can be assigned to any of the users specified
+Skills | Task can be assigned to any users that have skill specified
+EitherOf | Allows to specify `or` relation between rules. So one can specify combination of skills and users. 
+
+
+### Call Tasks
+
+All calls within Spinoco are stored in form of special type of task (CallSessionTask). 
+
+CallSessionTaskType contains one single attribute and that is direction. Direction may be Originating or Terminating. 
+Each Direction type contains context (from, to) that can further specify source and destionation (caller and callee) of the call. 
+
+Originating direction indicates that `owner` of the task placed the call. 
+
+Terminating direction indicates, that `assignee` received call from the `owner`. 
+
+
+Each CallSessionTask is created with Type1 UUID that contains encoded time of the call start of given 
+call within Spinoco platform. This time is when the call originally appeared in platform. 
+
+Furthermore when call terminates by either beying answered or for some reason not answered, the 
+task is closed with time and date and reason. This is stored in `result` attribute of task as `CallTaskCompleted` type. 
+
+Following time information can be obtained from the CallSessionTask
+
+property | Computation |Description
+---------|-------------|-----------
+ringing  | result.ringing - timeOf(id) | Time of the call being in `Ringing` state. For the calls answered by Voice Application (IVR) this is typically few ms
+connected | result.terminated - result.answered.R  | Time of call being `Connected` in ms.
+
+FurtherMore `result.answered.L` contains reason for call being not connected (i.e. Busy, NotFound, ...). 
+
+
+### Recording of call 
+
+Calls may be recoreded. Each call may have one or more recordings. Call may have mutiple recordings 
+for example when it is recorded in Voice Application (IVR) and then by Spinoco User, or when call 
+was transferred. 
+
+All Call recordings are stored in `detail` attribute of the task, in `recordings` property of the `Recordings` detail. 
+Amongs few details of the recording it contains id of the recording, that may be eventually used to download recording itself. 
+
+Recordings are stored in `.ogg` open source audio format as defined in [Ogg Vorbis](https://cs.wikipedia.org/wiki/Vorbis).
 
 
 # Group Authentication 
@@ -603,6 +723,79 @@ This allows to update the contact of the call for one specified.
 
 + Response 404
 
+
+
+
+# Group Task Query
+
+## Query of Task detail [/task/{taskId}/detail]
+
+### Query Detail [GET]
+
+Allows to query Concrete existing task 
+
++ Parameters
+    + taskId :  `caffee99-f18c-11e4-9a96-0000000000aa` (string) - Id of task 
+
++ Request 
+
+    + Headers
+    
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+        
+
++ Response 200 (application/json)
+
+    + Attributes
+        + id: `caffee99-f18c-11e4-9a96-0000000000aa` (string, required) - Id of the task
+        + label: `Task Name` (string, required) - Label (name) of the task
+        + owner: (TaskRequestOwner, required) - Owner of the task
+        + assignee: (TaskAssignee, required) - Assignee of the task 
+        + assignableTo: (AssignableTo, optional) - To whon this task may be assigned. 
+        + due: (TaskDue, optional) - When this task is due
+        + message: (ClientTextContent, optional) - Any text (body) of the task
+        + files: (array, required) - Any attached files to the task (does not include files attached to comments)
+            + (FileContent)
+        + tpe: (TaskType, required) - Type of the task  
+        + result: (array, optional) - If defined, task was completed
+           + 1493890946392 (string, required) - millis since epoch when this task was closed 
+           + (TaskResultType, required)  - result that closed the task 
+        + detail: (ClientTaskDetail, optional) - Detail of the task, may be present at some task types   
+        + linked: (array, optional) - List of tasks linked to this task
+            + `caffee99-f18c-11e4-9a96-0000000000aa`
+        + subscribed (array, optional) - List of user subscribed to this task
+            + `caffee99-f18c-11e4-9a96-0000000000aa`   
+        
+
++ Response 404
+
+    
+    
+# Group Call Recording 
+
+## Query Recording [/recording/{taskId}/{recordingId}]
+
+### Download Recording [GET]
+
+Queries Recoding in `audio/ogg` binary data format. If succesfull server streams data of audio recording. 
+Note that Spinoco Server also support partial content of the recording to be donwloaded by specifying http [Range header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Range).
+
++ Parameters
+    + taskId :  `caffee99-f18c-11e4-9a96-0000000000aa` (string) - Id of task 
+    + recordingId :  `caffee99-f18c-11e4-9a96-0000000000aa` (string) - Id of recording 
+
++ Request 
+
+    + Headers
+    
+            Authorization: srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+            Range: 0-   
+
++ Response 200 (audio/ogg)
+
++ Response 404
+
+    
     
 # Data Structures
 
@@ -742,3 +935,262 @@ This allows to update the contact of the call for one specified.
 ## DeviceTarget 
   + __tpe : DeviceTarget (string, fixed)
   + userId : `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the device to dial, must be from the same customer
+  
+  
+  
+## TaskRequestOwner (fixed-type)
+  + (UserTaskRequestOwner)
+  + (ContactTaskRequestOwner)
+  + (AnonymousTaskRequestOwner)
+  
+## UserTaskRequestOwner (object) 
+  + __tpe : UserRequestOwner (string, fixed)
+  + userId : `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the user that owns the task
+  + contact: (array, optional)
+    + `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the AddressBook
+    + `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the Contact
+  
+  
+## ContactTaskRequestOwner  (object) 
+  + __tpe : ContactRequestOwner (string, fixed)   
+  + abId: `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the AddressBook
+  + contactId:  `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the Contact 
+  
+## AnonymousTaskRequestOwner  (object) 
+  + __tpe : Anonymous (string, fixed) 
+  
+  
+  
+## TaskAssignee (fixed-type)  
+  + (TaskAssigned)
+  + (TaskOffered)
+  + (TaskUnAssigned)
+  
+  
+## TaskAssigned
+  + __tpe : Assigned (string, fixed) 
+  + userId : `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the user to whom the task is assigned
+
+## TaskOffered
+  + __tpe : Offered (string, fixed) 
+  + userId : `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the user to who has this task assigned and offers is to other users. 
+
+## TaskUnAssigned
+ + __tpe : UnAssigned (string, fixed) 
+ 
+ 
+## AssignableTo (fixed-type)
+ + (AssignableToUsers)
+ + (AssignableToSkills)
+ + (AssignableEitherOf)
+
+
+## AssignableToUsers (object)
+ + __tpe : Users (string, fixed) 
+ + users : (array, required) - List of users that this task may be assigned to
+     + `caffee99-f18c-11e4-9a96-000000000000`
+ 
+ 
+## AssignableToSkills (object)
+ + __tpe : Skills (string, fixed) 
+ + skills : (array, required) - List of skill Ids, that this user may be assigned to 
+    + SK1
+    + SK2
+    
+
+## AssignableEitherOf (object)
+ + __tpe : EitherOf (string, fixed) 
+ + options: (array, required)
+    + (AssignableTo)
+    
+    
+## TaskDue (object)
+ + due: 1493890946392 (string, required) - Milliseconds since epoch when this task is due
+ + alertBefore : 600 (number, optional) - Number of seconds to alert user before this task is due. 
+ 
+ 
+## ClientTextContent (object)
+ + content: That is task body (string, required) - Body of the task
+
+
+## FileContent (object)
+ + fileName: `foo.txt` (string, required) - Name of the file
+ + mimeType: `text/plain` (string, required) - Mime type of the file
+ + size:  `100` (number, required) - Size of the file in bytes
+ + fileId : `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the file in Spinoco
+  
+  
+## TaskType (fixed-type)
+ + (HashTagWorkFlowTask)
+ + (MissedCallTask)
+ + (CallSessionTask)
+ 
+## HashTagWorkFlowTask  (object)   
+  + __tpe : HashTagWorkFlowTask (string, fixed) 
+  + byHashTag: (HashTag, required)
+  + fromTask: `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the task from which this task is created
+
+
+## MissedCallTask (object)
+  + __tpe : MissedCallTask (string, fixed)
+  + target: (MissedCallTaskType, required)
+  + from: (array, required)
+    + `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the AddressBook
+    + `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the Contact
+  + number: `+420222500550` (string, optional) - E164 number if known
+  
+## MissedCallTaskType (fixed-type)
+  + (MissedCallTaskTypeVA)
+  + (MissedCallTaskTypeUser)
+      
+
+## MissedCallTaskTypeVA  (object)
+ + L : `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the Spinoco Voice Application
+
+## MissedCallTaskTypeUser (object)
+ + R : `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the Spinoco Voice Application
+  
+
+## CallSessionTask  (object)
+  + __tpe : CallSessionTask (string, fixed)
+  + direction: (SessionDirection, required)
+   
+  
+## SessionDirection (fixed-type)
+  + (OriginatingSessionDirection)
+  + (TerminatingSessionDirection)
+
+
+## OriginatingSessionDirection (object)
+  + __tpe : Originating (string, fixed)
+  + from: (CustomerCallLegContext, required) - Source of the call 
+  + to: (CallLegContext, required) - Destination of the call 
+  + fromPhoneNumber: `+420222500550` (string, optional) - If the user has assgined phone number when making outgoing call, this contains that number   
+
+
+## TerminatingSessionDirection (object)
+ + __tpe : Terminating (string, fixed)
+ + from: (CallLegContext, required) - Source of the call 
+ + to: (CustomerCallLegContext, required) - Destination of the call 
+ + toPhoneNumber: `+420222500550` (string, optional) - If dialed with concrete phone number, this contains that phone number  
+
+
+## CallLegContext (fixed-type)
+ + (CustomerCallLegContext)
+ + (PublicCallLegContext)
+
+## PublicCallLegContext (object)
+  + __tpe: PublicCallLegContext (string, fixed)
+  + number: (PublicNumber, optional) - Number of the remote party if known
+
+## CustomerCallLegContext (object)
+ + __tpe: CustomerCallLegContext (string, fixed)
+ + ccId: `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the Spinoco Customer
+ + partition: 0  (number, required) - Partition of the customer
+ + tpe: (CallLegContextContextType, required) - Type of context
+  
+  
+  
+## CallLegContextContextType  (fixed-type)
+  + (CallLegContextTypeVoiceApplication)
+  + (CallLegContextTypeUser)
+  + (CallLegContextTypeDevice)
+
+
+## CallLegContextTypeVoiceApplication (object)
+ + __tpe : VoiceApplication (string, fixed)
+ + appId:  `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the Voice Application
+ + publicNumber: (PublicNumber, optional) - Number of the voice application 
+
+## CallLegContextTypeUser (object)
+ + __tpe : User (string, fixed)
+ + userId:  `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the user
+ + deviceId:  `caffee99-f18c-11e4-9a96-000000000000` (string, optional) - Id of the device from which the call is made
+ + contact: (array, optional) - Id of the contact and addressbook if known 
+    + `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the AddressBook
+    + `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the Contact
+ + mobile: `+420600600600` (string, optional) - E164 number of mobile, id this call was directed to user's mobile number 
+
+## CallLegContextTypeDevice
+ + __tpe : Device (string, fixed)
+ + userId:  `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the device that was initating / receiving the call
+
+
+## PublicNumber  (object)
+ + e164: `+420222500505` (string, required) - E164 formatted phone number 
+ + contactId: `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the Contact
+ + abId: `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of the AddresBook
+
+## TaskResultType (fixed-type)
+ + (TaskResultTypeCompleted)
+ + (TaskResultTypeCallTaskCompleted)
+  
+## ManualResultType (fixed-type)  
+ + (TaskResultTypeCompleted)
+  
+## TaskResultTypeCompleted  (object)
+ + __tpe : Completed (string, fixed)
+ + cancelled: false (boolean, required) - Indicates whether owner cancelled the task
+ + hashTag: (array, optional) - Any hashtags specified when task was closed
+   + (HashTag)
+   
+## TaskResultTypeCallTaskCompleted (object)
+ + ringing: 1493890946392 (string, optional) - millis since epoch when call started to ring
+ + answered: (CallSessionReleaseOrAnswer, required) - Whether call was answered or just released CallSessionReleaseCause \/ DateTime
+ + terminated: 1493890946392 (string, optional) - millis since epoch when call terminated 
+ + byCaller: false (boolean, required) - if caller terminated the call, this is set to true
+ + closedManually:  (ManualResultType, optional) - if the call task was also manually closed, then this contains information like hashtags etc.. 
+ + missedCall: (MissedCallCandidate, optional) - if the call was missed, this contains data from which missed call task may be created
+
+  
+## CallSessionReleaseOrAnswer (fixed-type)
+ + (CallSessionRelease)
+ + (CallSessionAnswer)
+
+## CallSessionRelease (object)
+ + L : (CallSessionReleaseCause, required) - Contains reason why call was not released
+ 
+## CallSessionAnswer (object)
+ + R : 1493890946392 (string, required) - contains number of millis since epch when call was answered
+
+## MissedCallCandidate (object)
+ + dueAt: (TaskDue, required) - When the missed call has to be due 
+ + assignableTo: (AssignableTo, optional) if specified, contains who can handle missed call
+ + assignTo: `caffee99-f18c-11e4-9a96-000000000000` (string, optional) - Id of the user to whom this has to be assigned
+ + completeWhenConnected: true (boolean, required) when true, indicates that this missed call task has to be completed when user will be connected
+
+
+## CallSessionReleaseCause (fixed-type)
+ + (CallSessionReleaseCauseBusy)
+ + (CallSessionReleaseCauseNotFound)
+ + (CallSessionReleaseCauseFailure)
+
+## CallSessionReleaseCauseBusy (object)
+  + __tpe : Busy (string, fixed)
+  
+## CallSessionReleaseCauseNotFound (object)
+  + __tpe : NotFound (string, fixed)  
+  + detail : (string, optional) additional detail why the number was not found
+  
+## CallSessionReleaseCauseFailure (object)
+  + __tpe : NotFound (string, fixed)  
+  + rsn : (string, required) SIP reason for call being not connected
+  + descr : (string, optional) additional information 
+
+
+## ClientTaskDetail (fixed-type)
+  + (Recordings)
+
+
+## Recordings (object)  
+  + __tpe : Recordings (string, fixed)  
+  + recordings : (object, required)
+  + `caffee99-f18c-11e4-9a96-000000000000` : (ClientCallRecording, required) - Individual call recordings 
+
+
+## ClientCallRecording (object)
+  + id : `caffee99-f18c-11e4-9a96-000000000000` (string, required) - id of recording
+  + from: 1493890946392 (string, required) - when the recording started, millis since epoch
+  + duration: 60000 (string, required) - millis of the recording duration
+  + vm: false (boolean, required) - true, if the recording is voice-mail recording 
+  + available: false (boolean, required) - false, when recording is not yet available, true when recording may be replayed.
