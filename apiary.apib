@@ -177,7 +177,8 @@ of JSON encoded message. Following is example of such message:
 {
  "sessionId"            : "caffeeff-f18c-11e4-9a96-000000000000", 
  "outgoing"             : false,
- "otherParty            : ["Jane Doe", false],
+ "otherPartyName"       : "Jane Doe",
+ "otherPartyNumber"     : "+420123456789",
  "otherPartyContactId"  : ["caffeeff-f18c-11e4-9a96-000000000000", "caffeeff-f18c-11e4-9a96-000000000000"],
  "transferredTo"        : "Transferree",
  "transferredFrom"      : "Transferror", 
@@ -197,7 +198,8 @@ Name                | Required  | Type | Description
 --------------------|-----------|------------------|-----------------------
 sessionId           | Y | String                   | Id of call session
 outgoing            | Y | Boolean                  | Indicates if user is receiveing call (false) or dialed the call (true)
-otherParty          | N | [String, Boolean]        | Indicates other (remote party) of this call. Based on `outgoing` value this is either caller or callee. If the Boolean value is true, then string contains valid E164 Number, otherwise it contains name of the contact. 
+otherPartyName      | N | String                   | Indicates name of other (remote party) of this call. Based on `outgoing` value this is either caller or callee. 
+otherPartyNumber    | N | String                   | Indicates phone number of other (remote party) of this call. Based on `outgoing` value this is either caller or callee.  
 otherPartyContactId | N | [String, String]         | If other party is contact (not a call within the group) contains id of addressBook and id of contact. 
 transferredTo       | N | String                   | Name of the party where this call is about to be transferred (transferee). 
 transferredFrom     | N | String                   | Name of the remote party from where this call is being transferred (transferor).
