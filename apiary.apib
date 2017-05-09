@@ -156,19 +156,19 @@ messages. In case of WebSocket API, messages are delivered as text frames.
 
 To monitor calls over WebSocket open Websocket against 
 
-`/call/monitor/ws?a=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c&u=john.doe@domain.com&call=monitor`
+`/call/monitor/ws?a=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c&userName=john.doe@domain.com&call=monitor`
 
 To monitor calls over SSE open SSE connection against 
 
-`/call/monitor/sse?a=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c&u=john.doe@domain.com&call=monitor`
+`/call/monitor/sse?a=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c&userName=john.doe@domain.com&call=monitor`
 
 In both scenarios supply following parameters: 
 
-Name | Description 
------|------------
-a    | Valid Authentification token
-u    | User to monitor. If not supplied will be monitoring user that owns authentication token. Note that only user with API role may impersonate other user
-call | Supplying with monitor value indicates that Spinoco shall sent events related to Call Monitoring. 
+Name     | Description 
+---------|------------
+a        | Valid Authentification token
+userName | User to monitor. If not supplied will be monitoring user that owns authentication token. Note that only user with API role may impersonate other user
+call     | Supplying with monitor value indicates that Spinoco shall sent events related to Call Monitoring. 
 
 Once the connection with server is establised, Spinoco will start to send state of all active calls for supplied user that take a form 
 of JSON encoded message. Following is example of such message: 
