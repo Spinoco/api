@@ -389,6 +389,55 @@ to query user, get a list of available users and modify user properties.
 
 Users may be further assigned to team for team specific functionality. 
 
+Example UserInfo object is here : 
+
+```
+{
+  "id": "caffee99-f18c-11e4-9a96-000000000000",
+  "userName": "john.doe@spinoco.com",
+  "firstName": "John",
+  "lastName": "Doe",
+  "lang": "en_US",
+  "deactivated": "1493890946392",
+  "roles": [
+    "User"
+  ],
+  "permissions": [
+    "Team"
+  ],
+  "skills": [
+    "SK1",
+    "SK2"
+  ],
+  "memberOf": [],
+  "avatar": "caffee99-f18c-11e4-9a96-000000000000",
+  "customReports": [],
+  "recordCalls": false,
+  "ringTones": {},
+  "calls": {}
+}
+
+```
+
+Meaning of attributes of the user detail : 
+
+Attribute | Required | Type | Description 
+----------|------|----------|-------------
+id        |  X   | UUID |  Id of the user
+userName     |  X   | String | Login Name of the user  
+firstName | X | String | First Name of the user
+lastName    | X | String | Last Name of the user 
+lang       |   | String | Language of the user, If not present deafults to US English
+deactivated|  | Timestamp | Contains timestamp when user was deactivated. If empty, user is active
+roles | X | array, string | Roles the user has assigned
+permissions| X | array, string | Permissons of the user 
+skills | X | array, string | Skill Ids which user has been assigned
+memberOf | X | array, UUID | Id of the team user is member of. Currently only first team is accepted. 
+avatar | | UUID | Id of avatar picture user has uploaded. 
+customReports | | array, object | Reports that have been assigned to the user 
+recordCalls | X | boolean | If true, calls of the user will be recorded 
+ringTones | X | object | settings for the ringtones 
+calls | X | object | settings of user call management
 
 # Group Authentication 
 
@@ -810,13 +859,8 @@ Querieas all available active skills in system and their information
              
 + Response 200 (application/json)
 
-    + Attributes 
-     + (array, object)
-      + id : `SK1` (string, required) - Id of skill (1...4 letters)
-      + label: `Skill 1` (string, required) - Name of the skill
-      + colorScheme: 1 (number, required) - Number of the color scheme 
-      + priority: Normal (SkillPriority, required) - Priority of the skill 
-      + shape: triangle (SkillShape, required) - Shape of the skill icon
+    + Attributes (array[ClientSkillInfo])
+   
     
 
 + Response 404 
@@ -1364,7 +1408,7 @@ Updates user specified with JSON. User must exists to be updated.
   + High
   + Higher
   + Highest
-  + OnlyThis    +  If tasks of this priority exists, then only these are processed.     
+  + OnlyThis    -  If tasks of this priority exists, then only these are processed.     
 
   
   
