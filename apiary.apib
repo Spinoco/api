@@ -226,6 +226,41 @@ that may allow application further signalling and statitcs. Currently following 
 - HashTag(s) of the call 
 - Contact of the call 
 
+## Configuration
+
+Spinoco Provides API to configure certain elements of applications, such as creating the users, modifying theri attributes. 
+Unless noted differently, changes are effective immediatelly and user is impacted once the request is succesfull. 
+
+
+
+### Skills
+
+Skills are repereseted in Spinono as 1 - 4 letter strings, that can affect how tasks are routed, how call are answered or how activites are counted in statistics. 
+Skills may have various properties (such as name, priority etc.) and these can be queried by API.
+
+Example of skill object received is here: 
+
+```
+{
+  "id": "SK1",
+  "label": "Skill 1",
+  "colorScheme": 1,
+  "priority": "Normal",
+  "shape": "triangle"
+}
+```
+
+Meaning of parameters for the skill : 
+
+Attribute | Required | Type | Description 
+----------|------|----------|-------------
+id        |  X   | String (1..4) |  Skill identifier
+label     |  X   | String | Label of the skill 
+colorScheme | X | Int | Color from color Scheme of the skill icon
+priority    | X | String | Priority of the skill 
+shape       | X | Int | Skill Shape (circle, square, triangle) 
+
+
 ## Tasks
 
 ### Introduction
@@ -346,6 +381,13 @@ All Call recordings are stored in `detail` attribute of the task, in `recordings
 Amongs few details of the recording it contains id of the recording, that may be eventually used to download recording itself. 
 
 Recordings are stored in `.ogg` open source audio format as defined in [Ogg Vorbis](https://cs.wikipedia.org/wiki/Vorbis).
+
+## User Management 
+
+Users in system as referenced by a from of either UUID or by userName (email). Available API allows 
+to query user, get a list of available users and modify user properties. 
+
+Users may be further assigned to team for team specific functionality. 
 
 
 # Group Authentication 
@@ -727,6 +769,59 @@ This allows to update the contact of the call for one specified.
 
 
 
+# Group Call Recording 
+
+## Query Recording [/recording/{taskId}/{recordingId}]
+
+### Download Recording [GET]
+
+Queries Recoding in `audio/ogg` binary data format. If succesfull server streams data of audio recording. 
+Note that Spinoco Server also support partial content of the recording to be donwloaded by specifying http [Range header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Range).
+
++ Parameters
+    + taskId :  `caffee99-f18c-11e4-9a96-0000000000aa` (string) - Id of task 
+    + recordingId :  `caffee99-f18c-11e4-9a96-0000000000aa` (string) - Id of recording 
+
++ Request 
+
+    + Headers
+    
+            Authorization: srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+            Range: 0-   
+
++ Response 200 (audio/ogg)
+
++ Response 404
+
+
+# Group Configuration 
+
+## Query All Available skills [/skill/]
+
+### Get All skills [GET]
+
+Querieas all available active skills in system and their information 
+
++ Request 
+
+    + Headers
+    
+            Authorization: srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+             
++ Response 200 (application/json)
+
+    + Attributes 
+     + (array, object)
+      + id : `SK1` (string, required) - Id of skill (1...4 letters)
+      + label: `Skill 1` (string, required) - Name of the skill
+      + colorScheme: 1 (number, required) - Number of the color scheme 
+      + priority: Normal (SkillPriority, required) - Priority of the skill 
+      + shape: triangle (SkillShape, required) - Shape of the skill icon
+    
+
++ Response 404 
+            
+            
 
 # Group Task Query
 
@@ -772,32 +867,78 @@ Allows to query Concrete existing task
 + Response 404
 
     
-    
-# Group Call Recording 
+# Group User Management 
 
-## Query Recording [/recording/{taskId}/{recordingId}]
+## Query User [/user/{userId}/]
 
-### Download Recording [GET]
+### Get User Detail [GET]
 
-Queries Recoding in `audio/ogg` binary data format. If succesfull server streams data of audio recording. 
-Note that Spinoco Server also support partial content of the recording to be donwloaded by specifying http [Range header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Range).
+Gets user details given user's uuid. 
 
 + Parameters
-    + taskId :  `caffee99-f18c-11e4-9a96-0000000000aa` (string) - Id of task 
-    + recordingId :  `caffee99-f18c-11e4-9a96-0000000000aa` (string) - Id of recording 
+    + userId :  `caffee99-f18c-11e4-9a96-0000000000aa` (string) - Id of user 
 
 + Request 
 
     + Headers
     
-            Authorization: srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
-            Range: 0-   
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+            
+            
++ Response 200 (application/json)
 
-+ Response 200 (audio/ogg)
+    + Attributes (UserInfo)
+        
 
 + Response 404
 
+
+
+
+## Modify User [/user/]
+
+### Create new User [POST]
+
+Creates new user with user information supplied. Note Id of the user supplied will be ignored and replaced with one 
+assigned by server. That userId is in turn returned as body of the `200 OK` response. 
+
++ Request 
+
+    + Headers
     
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+
+
+    + Attributes (UserInfo)
+    
++ Response 200 (application/json)
+
+    + Attributes (string) - Id of newly created user
+    
+    
+    
+
+### Update current User [PUT]
+
+Updates user specified with JSON. User must exists to be updated. 
+
++ Request 
+
+    + Headers
+    
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+
+
+    + Attributes (UserInfo)
+    
++ Response 200 (application/json)
+
+    + Attributes (string) - Id of newly created user
+    
+    
+ 
+ 
+
     
 # Data Structures
 
@@ -1196,3 +1337,71 @@ Note that Spinoco Server also support partial content of the recording to be don
   + duration: 60000 (string, required) - millis of the recording duration
   + vm: false (boolean, required) - true, if the recording is voice-mail recording 
   + available: false (boolean, required) - false, when recording is not yet available, true when recording may be replayed.
+  
+  
+  
+## ClientSkillInfo (object)
+  + id : `SK1` (string, required) - Id of skill (1...4 letters)
+  + label: `Skill 1` (string, required) - Name of the skill
+  + colorScheme: 1 (number, required) - Number of the color scheme 
+  + priority: Normal (SkillPriority, required) - Priority of the skill 
+  + shape: triangle (SkillShape, required) - Shape of the skill icon
+  
+## SkillShape (enum)
+  + circle
+  + square
+  + triangle
+  
+  
+## SkillPriority (enum)
+  + IfNoOthers  - Tasks with this skill are processed only, if no other tasks are in Q. 
+  + Lowest
+  + Lower
+  + Low
+  + Less
+  + Normal  - Default.
+  + More
+  + High
+  + Higher
+  + Highest
+  + OnlyThis    +  If tasks of this priority exists, then only these are processed.     
+
+  
+  
+## UserInfo (object)
+  + id: `caffee99-f18c-11e4-9a96-000000000000` (string, required) - id of user
+  + userName: `john.doe@spinoco.com` (string, required) - username (email)
+  + firstName: `John` (string, required) - First Name  of the user
+  + lastName: `Doe` (string, required) - Last Name of the user
+  + lang: `en_US` (string, optional) - Language of the user, en_US if not specified.  
+  + deactivated :  1493890946392 (string, optional) - If present user is not active since given epoch timestamp 
+  + roles: (array, required) - roles of the user 
+    + (UserRole)
+  + permissions: (array, required) - permissions of the user
+    + (UserPermission)
+  + skills: (array, required) - skills of the user
+    + SK1
+    + SK2
+  + memberOf: (array, required) - member of the team, currently only one team is accepted 
+  + avatar: `caffee99-f18c-11e4-9a96-000000000000` (string, optional) - If present user has avatar stored in given file 
+  + customReports: (array, required) - Reports presented only to this user  
+  + recordCalls: (boolean, required) - whether to record all calls of this user 
+  + ringTones: (object, required) - ringtones of the user  
+  + calls: (object, required) - specific setting for managing user call
+  
+  
+## UserRole (enum) 
+   + User  - User, this gives access to Spinoco App 
+   + TeamLeader - Team leader has rights to manage users and statistics
+   + Administrator - Administrator has full rights with optional access to settings tab
+   + BillingUser - Has access to Billing as User
+   + BillingAdministrator - Has access to administer Billing
+   + Api - Account with access to API interface. May impersonate other users. 
+   
+   
+## UserPermission (enum)
+   + Team  - grants access to team screen
+   + Communication - grants access to communication screen
+   + Dashboard - grants access to dashboard
+   + Stats - grants access to statistics screen
+   + Settings - grants access to settings
