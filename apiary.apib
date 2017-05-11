@@ -895,8 +895,7 @@ Allows to query Concrete existing task
         + assignableTo: (AssignableTo, optional) - To whon this task may be assigned. 
         + due: (TaskDue, optional) - When this task is due
         + message: (ClientTextContent, optional) - Any text (body) of the task
-        + files: (array, required) - Any attached files to the task (does not include files attached to comments)
-            + (FileContent)
+        + files: (array[FileContent], required) - Any attached files to the task (does not include files attached to comments)
         + tpe: (TaskType, required) - Type of the task  
         + result: (array, optional) - If defined, task was completed
            + 1493890946392 (string, required) - millis since epoch when this task was closed 
@@ -905,7 +904,9 @@ Allows to query Concrete existing task
         + linked: (array, optional) - List of tasks linked to this task
             + `caffee99-f18c-11e4-9a96-0000000000aa`
         + subscribed (array, optional) - List of user subscribed to this task
-            + `caffee99-f18c-11e4-9a96-0000000000aa`   
+            + `caffee99-f18c-11e4-9a96-0000000000aa`  
+        + hashtags (array[HashTag], required) - List of HashTags the task has assigned
+        
         
 
 + Response 404
