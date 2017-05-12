@@ -175,19 +175,21 @@ of JSON encoded message. Following is example of such message:
 
 ``` 
 {
- "sessionId"            : "caffeeff-f18c-11e4-9a96-000000000000", 
- "outgoing"             : false,
- "otherPartyName"       : "Jane Doe",
- "otherPartyNumber"     : "+420123456789",
- "otherPartyContactId"  : ["caffeeff-f18c-11e4-9a96-000000000000", "caffeeff-f18c-11e4-9a96-000000000000"],
- "transferredTo"        : "Transferree",
- "transferredFrom"      : "Transferror", 
- "ringing"              : 10, 
- "released"             : false,
- "connected"            : 7,
- "held"                 : 5, 
- "skills"               : [["SK1", 1],["SK2", 2]],            
- "hashTags"             : [["contract-id", { "__tpe" : "ValueHashTag", "hashTagId": "caffeeff-f18c-11e4-9a96-000000000000", "value" : { "__tpe" : "StringValue", "string": "ABCD-12345"} }]]
+ "sessionId"                : "caffeeff-f18c-11e4-9a96-000000000000", 
+ "outgoing"                 : false,
+ "otherPartyName"           : "Jane Doe",
+ "otherPartyNumber"         : "+420123456789",
+ "otherPartyContactId"      : ["caffeeff-f18c-11e4-9a96-000000000000", "caffeeff-f18c-11e4-9a96-000000000000"],
+ "transferredTo"            : "Transferree",
+ "transferredFrom"          : "Transferror", 
+ "transferredToSession"     : "caffeeff-f18c-11e4-9a96-000000000000",
+ "transferredFromSession"   : "caffeeff-f18c-11e4-9a96-000000000000",
+ "ringing"                  : 10, 
+ "released"                 : false,
+ "connected"                : 7,
+ "held"                     : 5, 
+ "skills"                   : [["SK1", 1],["SK2", 2]],            
+ "hashTags"                 : [["contract-id", { "__tpe" : "ValueHashTag", "hashTagId": "caffeeff-f18c-11e4-9a96-000000000000", "value" : { "__tpe" : "StringValue", "string": "ABCD-12345"} }]]
 }
 
 ```
@@ -196,13 +198,15 @@ Individual parameters of message have following meaning:
 
 Name                | Required  | Type | Description 
 --------------------|-----------|------------------|-----------------------
-sessionId           | Y | String                   | Id of call session
+sessionId           | Y | UUID                   | Id of call session
 outgoing            | Y | Boolean                  | Indicates if user is receiveing call (false) or dialed the call (true)
 otherPartyName      | N | String                   | Indicates name of other (remote party) of this call. Based on `outgoing` value this is either caller or callee. 
 otherPartyNumber    | N | String                   | Indicates phone number of other (remote party) of this call. Based on `outgoing` value this is either caller or callee.  
-otherPartyContactId | N | [String, String]         | If other party is contact (not a call within the group) contains id of addressBook and id of contact. 
-transferredTo       | N | String                   | Name of the party where this call is about to be transferred (transferee). 
-transferredFrom     | N | String                   | Name of the remote party from where this call is being transferred (transferor).
+otherPartyContactId | N | [UUID, UUID]         | If other party is contact (not a call within the group) contains id of addressBook and id of contact. 
+transferredTo       | N | UUID                   | Name of the party where this call is about to be transferred (transferee). 
+transferredFrom     | N | UUID                   | Name of the remote party from where this call is being transferred (transferor).
+transferredToSession| N | UUID                     | If present indicates this call was tranferred to given session
+transferredFromSession| N | UUID                   | If present indicates this call was transferred from given session        
 ringing             | Y | Int                      | Number of seconds this call is ringing
 released            | Y | Boolean                  | If true, indicates call has been released. Also that indicates very last message of this call received. 
 connected           | N | Int                      | If present, indicates number of seconds since this call was connected.
