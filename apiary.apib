@@ -367,12 +367,41 @@ task is closed with time and date and reason. This is stored in `result` attribu
 
 Following time information can be obtained from the CallSessionTask
 
-property | Computation |Description
+Property | Computation |Description
 ---------|-------------|-----------
 ringing  | result.ringing - timeOf(id) | Time of the call being in `Ringing` state. For the calls answered by Voice Application (IVR) this is typically few ms
 connected | result.terminated - result.answered.R  | Time of call being `Connected` in ms.
 
 FurtherMore `result.answered.L` contains reason for call being not connected (i.e. Busy, NotFound, ...). 
+
+
+### Call Task Details
+
+Apart from determining Call Tasks basic data, Spinoco allows to query detailed progress of every call, 
+including (amnogst others) time call was in the queue, when call was transferred and to whomm or when the 
+call has been assigned/unasignedd particullar skill. 
+
+This is achieved via querying Call Detail query for call tasks that returns array of Call Events that are assotiated
+with every call. 
+
+Each call is compromised of one or more Legs. Typically call has two legs, one that initiated the 
+call (called `i`) and then one or more outoging legs from the call session (indicated like `o<n>` where `n` is assigned
+uniquely and continuously. 
+
+The events received from query are of `SessionLegEvent` type and are always assigned to specific leg with following meaning: 
+
+Event Type | Description
+-----------|-------------
+NewLeg     | Guaranteed to be first event for any given leg
+Ringing    | Leg received `Ringing` indication from the remote party. 
+Connected  | Leg was connected with remote party. This apears always when media start to flow to/from session. Also this may indicate that leg was put on hold. 
+Terminated | Leg was terminated
+Transfer   | Leg initiated transfer to other call session. 
+
+
+Please see explanation of individual event types for the leg to get better understading of the possibilities 
+of information that you may query from the details. 
+
 
 
 ### Recording of call 
@@ -915,6 +944,29 @@ Allows to query Concrete existing task
 
 + Response 404
 
+## Quey Task Call Sesion Detail [/session/{taskId}]
+
+### Get Detail [GET]
+
+Queries Detailed Call Session log about Call Legs froming Call Session.
+
++ Parameters
+    + taskId :  `caffee99-f18c-11e4-9a96-0000000000aa` (string) - Id of Call Task 
+
++ Request 
+
+    + Headers
+    
+            Authorization:srp6a token=5d4625a4e276184855627b20c9189796933faa183b79bd7f710d3685bff8933c
+
+
++ Response 200 (application/json)
+
+    + Attributes (array[CallSessionNotify])
+    
+    
+    
+    
     
 # Group User Management 
 
@@ -1454,3 +1506,92 @@ Updates user specified with JSON. User must exists to be updated.
    + Dashboard - grants access to dashboard
    + Stats - grants access to statistics screen
    + Settings - grants access to settings
+   
+   
+   
+## SessionCreated (object)   
+  + sessionId: `caffee99-f18c-11e4-9a96-000000000000` (string, required) - id of session (task)
+  + direction: (SessionDirection)  
+  
+  
+## SkillsChanged  (object)
+  + skills: (array, required) - new skills of the call 
+    + SK1
+    + SK2
+  
+## HashTagsChanged (object)
+  + hashTags: (array, required) - new hashtags of the call 
+    + (HashTag)
+  
+## UpdateContact (object)
+ + abId: `caffee99-f18c-11e4-9a96-000000000000` (string, required) - id of contact addressBook
+ + contactId: `caffee99-f18c-11e4-9a96-000000000000` (string, required) - Id of contact
+ 
+## SessionAnswerable (object)
+ + answerable: true (boolean, required) - if true, session may be answered by availabe operator. Only for queued calls. 
+ 
+## SessionQueued (object)
+ + from: 1493890946392 (string, required) - when the call was put in the queue. 
+ 
+## SessionRecorded (object)
+ + recording: (ClientCallRecording, required) - Recording was attached to this call session 
+ 
+
+## SessionEventType (fixed-type)
+  + SkillsChanged
+  + HashTagsChanged
+  + UpdateContact
+  + SessionAnswerable
+  + SessionQueued
+  + SessionRecorded 
+  
+## SessionEvent (object)
+  + sessionId: `caffee99-f18c-11e4-9a96-000000000000` (string, required) - id of session (task)
+  + eventId: `caffee99-f18c-11e4-9a96-000000000000` (string, required) - id of this event (contains time of this event)
+  + tpe: SessionEventType
+  
+  
+## CallLegId (object)
+  + sessionId: `caffee99-f18c-11e4-9a96-000000000000` (string, required) - id of session (task)
+  + tag: `i` (string, required) - id of the leg 
+
+
+## NewLeg (object)
+  + context: (CallLegContext, required) - Context of the leg
+  
+## Ringing (object)
+
+## Connected (object)
+  + held: false (boolean, required) - whether the call is held or not  
+
+## Terminated (object)
+  + reason: (CallSessionReleaseCause, optional) - reason for the leg to be released
+  + remote: false (boolean, required) - if true, indicates that remote party terminated the leg
+  
+## Transfer (object)
+  + transferTo: (CallLegContext, optional) where this call is being transfered to/from
+  
+## SessionLegEventType (fixed-type)
+  + NewLeg
+  + Ringing
+  + Connected
+  + Terminated
+  + Transfer
+  
+  
+## SessionLegEvent (object)
+  + eventId: `caffee99-f18c-11e4-9a96-000000000000` (string, required) - id of this event (contains time of this event)
+  + legId: (CallLegId, required) - Id of session and leg for which this event was generated
+  + tpe: (SessionLegEventType, required) - Event for the leg
+
+
+## SessionTerminated (object)
+  + sessionId: `caffee99-f18c-11e4-9a96-000000000000` (string, required) - id of the session (task)
+  + eventId: `caffee99-f18c-11e4-9a96-000000000000` (string, required) - id of this event (contains time of this event)
+
+   
+## CallSessionNotify (fixed-type)
+   + SessionCreated    
+   + SessionEvent
+   + SessionLegEvent
+   + SessionTerminated
