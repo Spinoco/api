@@ -8,7 +8,7 @@ HOST: https://dev-01.spinoco.com/
 Spinoco authentication is based on SRP6a protocol and allows secure authentication of users to Spinoco.
 The basics of authentication are based on acquiring SRP6a authentication token, and then using that token 
 for any subsequent requests towards Spinoco. Token has limited lifetime, and when lifetime of token expires, 
-the server responds with `401 Precondition failed` response.
+the server responds with `412 Precondition failed` response.
 
 There are two available methods for acquiring SRP6a code: 
  
